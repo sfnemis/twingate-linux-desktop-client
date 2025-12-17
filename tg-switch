@@ -1,0 +1,140 @@
+#!/bin/bash
+#
+# tg-switch - Twingate profile switching backend
+#
+# Handles profile switching, service control, and DNS management
+# for CachyOS/Arch with systemd-resolved integration.
+#
+
+set -e
+
+KEY_DIR="/etc/twingate/keys"
+DATA_DIR="/var/lib/twingate"
+CONFIG_DIR="/etc/twingate"
+ACTIVE_PROFILE_FILE="/etc/twingate/active_profile"
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run with sudo."
+    exit 1
+fi
+
+repair_dns_link() {
+    local target="/run/systemd/resolve/stub-resolv.conf"
+    if systemctl is-active --quiet systemd-resolved; then
+        if [ ! -L "/etc/resolv.conf" ]; then
+            rm -f /etc/resolv.conf
+            ln -sf "$target" /etc/resolv.conf
+        fi
+    fi
+}
+
+restore_dns() {
+    if systemctl is-active --quiet NetworkManager; then
+        nmcli general reload dns 2>/dev/null || true
+    fi
+
+    if systemctl is-active --quiet systemd-resolved; then
+        resolvectl flush-caches 2>/dev/null || true
+        systemctl restart systemd-resolved
+        repair_dns_link
+    else
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+        systemctl restart NetworkManager 2>/dev/null || true
+    fi
+}
+
+do_stop() {
+    echo "" > "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+    rm -f "$ACTIVE_PROFILE_FILE"
+    systemctl stop twingate 2>/dev/null || true
+    restore_dns
+    echo "Twingate stopped."
+}
+
+do_add() {
+    local name="$1"
+    local source="$2"
+
+    if [ -z "$name" ] || [ -z "$source" ]; then
+        echo "Usage: tg-switch add <name> <file>"
+        exit 1
+    fi
+
+    local dest="$KEY_DIR/$name.json"
+    mkdir -p "$KEY_DIR"
+    cp "$source" "$dest"
+    chmod 600 "$dest"
+    chown root:root "$dest"
+    echo "Profile '$name' added."
+}
+
+do_switch() {
+    local name="$1"
+    local key="$KEY_DIR/$name.json"
+
+    if [ ! -f "$key" ]; then
+        echo "Profile not found: $name"
+        exit 1
+    fi
+
+    do_stop
+
+    rm -rf "${DATA_DIR:?}"/* 2>/dev/null || true
+    mkdir -p "$CONFIG_DIR" "$DATA_DIR"
+    chmod 755 "$CONFIG_DIR"
+
+    echo "$name" > "$ACTIVE_PROFILE_FILE"
+    chmod 644 "$ACTIVE_PROFILE_FILE"
+
+    twingate setup --headless "$key"
+
+    [ -f "$CONFIG_DIR/device_id" ] && chmod 644 "$CONFIG_DIR/device_id"
+    chown -R root:root "$CONFIG_DIR"
+    chown -R root:root "$DATA_DIR"
+
+    systemctl start twingate
+    repair_dns_link
+    echo "Connected to $name."
+}
+
+do_list() {
+    if [ -d "$KEY_DIR" ]; then
+        ls -1 "$KEY_DIR"/*.json 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/\.json$//'
+    fi
+}
+
+do_status() {
+    if systemctl is-active --quiet twingate; then
+        local profile=""
+        [ -f "$ACTIVE_PROFILE_FILE" ] && profile=$(cat "$ACTIVE_PROFILE_FILE" 2>/dev/null)
+        if [ -n "$profile" ]; then
+            echo "online:$profile"
+        else
+            echo "online"
+        fi
+    else
+        echo "offline"
+    fi
+}
+
+case "$1" in
+    stop)
+        do_stop
+        ;;
+    add)
+        do_add "$2" "$3"
+        ;;
+    list)
+        do_list
+        ;;
+    status)
+        do_status
+        ;;
+    "")
+        echo "Usage: tg-switch <profile> | stop | add <name> <file> | list | status"
+        exit 1
+        ;;
+    *)
+        do_switch "$1"
+        ;;
+esac
