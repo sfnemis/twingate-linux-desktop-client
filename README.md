@@ -1,4 +1,6 @@
-# Twingate Manager
+# Twingate Linux Desktop Client
+
+> **Unofficial** - This is a community project and is not affiliated with or endorsed by Twingate Inc.
 
 A lightweight KDE Plasma system tray application for managing Twingate VPN connections using **Service Keys** (headless authentication).
 
@@ -34,8 +36,8 @@ A lightweight KDE Plasma system tray application for managing Twingate VPN conne
 ### Quick Install
 
 ```bash
-git clone https://github.com/sfnemis/tg-kde-manager.git
-cd tg-kde-manager
+git clone https://github.com/sfnemis/twingate-linux-desktop-client.git
+cd twingate-linux-desktop-client
 sudo ./setup.sh
 ```
 

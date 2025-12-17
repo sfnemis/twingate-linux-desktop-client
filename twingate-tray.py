@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Twingate Manager - System tray application for managing Twingate VPN profiles.
+Twingate Linux Desktop Client - System tray application for managing Twingate VPN profiles.
 
-A lightweight KDE Plasma system tray application that provides quick access
-to Twingate VPN profile switching, connection status monitoring, and service control.
+An unofficial, lightweight KDE Plasma system tray application that provides quick access
+to Twingate VPN profile switching using Service Keys for headless authentication.
 """
 
 import os
@@ -31,7 +31,7 @@ class TwingateManager:
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
-        self.app.setApplicationName("Twingate Manager")
+        self.app.setApplicationName("Twingate Linux Desktop Client")
         self.app.setApplicationVersion(__version__)
 
         self.connect_time = None

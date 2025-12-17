@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# Twingate Manager - Installation Script
+# Twingate Linux Desktop Client - Installation Script
 # Supports: Arch Linux, Debian, Ubuntu, Fedora
 # Requires: KDE Plasma desktop environment
+#
+# Unofficial - Not affiliated with Twingate Inc.
 #
 
 set -e
@@ -128,7 +130,7 @@ setup_sudoers() {
     SUDOERS_FILE="/etc/sudoers.d/twingate-manager"
     
     cat > "$SUDOERS_FILE" << 'EOF'
-# Twingate Manager - Allow users in wheel/sudo group to run tg-switch without password
+# Twingate Linux Desktop Client - Allow users in wheel/sudo group to run tg-switch without password
 %wheel ALL=(root) NOPASSWD: /usr/local/bin/tg-switch
 %sudo ALL=(root) NOPASSWD: /usr/local/bin/tg-switch
 EOF
@@ -143,7 +145,7 @@ create_desktop_entry() {
     
     cat > /usr/share/applications/twingate-manager.desktop << EOF
 [Desktop Entry]
-Name=Twingate Manager
+Name=Twingate Linux Desktop Client
 Comment=Manage Twingate VPN profiles
 Exec=python3 /opt/twingate-manager/twingate-tray.py
 Icon=/opt/twingate-manager/icons/twingate_on.png
@@ -165,7 +167,7 @@ create_autostart() {
     
     cat > "$AUTOSTART_DIR/twingate-manager.desktop" << EOF
 [Desktop Entry]
-Name=Twingate Manager
+Name=Twingate Linux Desktop Client
 Comment=Manage Twingate VPN profiles
 Exec=python3 /opt/twingate-manager/twingate-tray.py
 Icon=/opt/twingate-manager/icons/twingate_on.png
@@ -180,7 +182,7 @@ EOF
 print_summary() {
     echo
     echo -e "${GREEN}============================================${NC}"
-    echo -e "${GREEN}  Twingate Manager installed successfully!  ${NC}"
+    echo -e "${GREEN}  Twingate Linux Desktop Client installed successfully!  ${NC}"
     echo -e "${GREEN}============================================${NC}"
     echo
     echo "Installation directory: /opt/twingate-manager"
@@ -196,7 +198,7 @@ print_summary() {
 
 main() {
     echo
-    echo "Twingate Manager - Installation"
+    echo "Twingate Linux Desktop Client - Installation"
     echo "================================"
     echo
     
